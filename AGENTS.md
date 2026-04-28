@@ -47,6 +47,9 @@ type: [exam-analysis | note | raw | wrong-question | ...]
 |-------|---------|--------|
 | `skills/upload-raw/SKILL.md` | User uploads files (URL/PDF/image/text) | Clean markdown in `sources/{subject}/` or `sources/raw/` |
 | `skills/upload-exam/SKILL.md` | User uploads exam photos | Structured analysis in `sources/{subject}/exams/` |
+| `skills/generate-practice/SKILL.md` | "帮我出点题", "生成练习题" | Exercises in `practice/YYYY-MM-DD-{subject}-practice.md` |
+| `skills/generate-reports/SKILL.md` | "总结一下", "学习报告" | Report in `reports/YYYY-MM-DD-{subject}-report.md` |
+| `skills/generate-review/SKILL.md` | "带我复习", "复习一下" | Review session; optionally saved to `review/` |
 
 ### upload-exam Key Behavior
 1. Extract problems, answers, teacher markings from images
