@@ -30,6 +30,12 @@ async def root():
 
 
 WHITELIST_DIRS = {"custom", "practice", "reports", "review"}
+DISPLAY_NAMES = {
+    "custom": "📋 学习档案",
+    "practice": "✏️ 练习题",
+    "reports": "📊 学习报告",
+    "review": "📚 复习计划",
+}
 
 
 @app.get("/api/files")
@@ -52,11 +58,14 @@ async def list_files(path: str = Query(""), show_all: bool = Query(False)):
                 continue
             full = os.path.join(target, name)
             rel = os.path.relpath(full, PROJECT_ROOT)
-            items.append({
+            item = {
                 "name": name,
                 "path": rel,
                 "is_dir": os.path.isdir(full),
-            })
+            }
+            if not show_all and name in DISPLAY_NAMES:
+                item["display_name"] = DISPLAY_NAMES[name]
+            items.append(item)
     except OSError as e:
         raise HTTPException(status_code=500, detail=str(e))
     return {"items": items, "current_path": path}

@@ -525,11 +525,12 @@ function renderFileSidebar() {
   }
   fileSidebarItems.forEach(item => {
     const icon = item.is_dir ? '📁' : '📄';
+    const displayName = item.display_name || item.name;
     const onclick = item.is_dir
       ? 'loadFileSidebar(\'' + escapeHtml(item.path) + '\')'
       : 'openFile(\'' + escapeHtml(item.path) + '\')';
     html += '<div class="file-sidebar-item" data-path="' + escapeHtml(item.path) + '" onclick="' + onclick + '">';
-    html += '<span class="file-sidebar-icon">' + icon + '</span><span class="file-sidebar-name">' + escapeHtml(item.name) + '</span>';
+    html += '<span class="file-sidebar-icon">' + icon + '</span><span class="file-sidebar-name">' + escapeHtml(displayName) + '</span>';
     html += '</div>';
   });
   container.innerHTML = html;
