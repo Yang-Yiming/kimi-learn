@@ -59,3 +59,6 @@ type: [exam-analysis | note | raw | wrong-question | ...]
 
 ### Profile Integration
 Read `custom/STUDENT.md` before processing exams or generating reports. Use context to make analyses specific and actionable. Update when new evidence warrants it.
+
+# Coding 
+If you are using python, DO NOT use `python / python3`, always use `uv run [file]` and `uv pip install` or `uv add`.

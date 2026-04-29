@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
 
-cd "$(dirname "$0")"
+# Run from project root so package imports work
+cd "$(dirname "$0")/.."
 
 # Use the virtual environment
-source .venv/bin/activate
+source web/.venv/bin/activate
 
 # Start the web server
-exec uvicorn main:app --host 0.0.0.0 --port 8765 --reload
+exec uvicorn web.main:app --host 0.0.0.0 --port 8765 --reload

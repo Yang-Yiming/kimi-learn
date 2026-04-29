@@ -62,6 +62,26 @@
   .session-item.active { background: var(--sidebar-active); color: var(--accent); }
   .session-time { font-size: 11px; color: #999; }
 
+  /* Usage Footer */
+  .usage-footer {
+    border-top: 1px solid var(--border); padding: 12px 16px; flex-shrink: 0;
+  }
+  .usage-item {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  }
+  .usage-item:last-child { margin-bottom: 0; }
+  .usage-label { font-size: 11px; color: var(--text-secondary); width: 28px; flex-shrink: 0; }
+  .usage-bar-wrap {
+    flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden;
+  }
+  .usage-bar {
+    height: 100%; border-radius: 3px; transition: width 0.4s ease;
+  }
+  .usage-bar.green { background: var(--success); }
+  .usage-bar.yellow { background: #f59e0b; }
+  .usage-bar.red { background: var(--danger); }
+  .usage-text { font-size: 11px; color: var(--text-secondary); width: 48px; text-align: right; flex-shrink: 0; }
+
   /* Main */
   .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
@@ -273,6 +293,18 @@
         <span class="session-time">now</span>
       </div>
     </div>
+    <div class="usage-footer" id="usage-footer">
+      <div class="usage-item">
+        <span class="usage-label">周</span>
+        <div class="usage-bar-wrap"><div class="usage-bar green" id="bar-week" style="width:0%"></div></div>
+        <span class="usage-text" id="text-week">-/-</span>
+      </div>
+      <div class="usage-item">
+        <span class="usage-label">5h</span>
+        <div class="usage-bar-wrap"><div class="usage-bar green" id="bar-5h" style="width:0%"></div></div>
+        <span class="usage-text" id="text-5h">-/-</span>
+      </div>
+    </div>
   </aside>
 
   <main class="main">
@@ -420,6 +452,11 @@ function handleMessage(msg) {
   if (kind === 'error') {
     appendRow('system', `<div class="bubble error">错误: ${escapeHtml(data.message || JSON.stringify(data))}</div>`);
     setBusy(false);
+    return;
+  }
+
+  if (kind === 'usage') {
+    updateUsage(data);
     return;
   }
 
@@ -757,6 +794,26 @@ userInput.addEventListener('input', () => {
   userInput.style.height = 'auto';
   userInput.style.height = Math.min(userInput.scrollHeight, 200) + 'px';
 });
+
+function _renderUsageBar(barId, textId, used, limit) {
+  const bar = document.getElementById(barId);
+  const text = document.getElementById(textId);
+  const pct = Math.min(used / limit * 100, 100);
+  bar.style.width = pct + '%';
+  bar.className = 'usage-bar ' + (pct >= 90 ? 'red' : pct >= 70 ? 'yellow' : 'green');
+  text.textContent = used + '/' + limit;
+}
+
+function updateUsage(data) {
+  const usage = data.usage;
+  if (usage) {
+    _renderUsageBar('bar-week', 'text-week', parseInt(usage.used) || 0, parseInt(usage.limit) || 1);
+  }
+  if (data.limits && data.limits.length > 0) {
+    const detail = data.limits[0].detail;
+    _renderUsageBar('bar-5h', 'text-5h', parseInt(detail.used) || 0, parseInt(detail.limit) || 1);
+  }
+}
 
 function escapeHtml(text) {
   if (text == null) return '';
