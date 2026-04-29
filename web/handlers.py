@@ -9,7 +9,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 from .auth import ensure_usage_polling
 from .config import logger
 from .state import broadcast, state
-from .wire import ensure_kimi, send_to_kimi
+from .wire import ensure_kimi, send_to_kimi, shutdown_kimi
 
 
 async def ws_endpoint(ws: WebSocket) -> None:
@@ -50,6 +50,10 @@ async def ws_endpoint(ws: WebSocket) -> None:
                 asyncio.create_task(_handle_response(payload))
             elif kind == "set_plan_mode":
                 asyncio.create_task(_handle_set_plan_mode(payload))
+            elif kind == "switch_session":
+                asyncio.create_task(_handle_switch_session(payload))
+            elif kind == "new_session":
+                asyncio.create_task(_handle_new_session())
             else:
                 await ws.send_json(
                     {"kind": "error", "data": {"message": f"Unknown kind: {kind}"}}
@@ -136,3 +140,39 @@ async def _handle_set_plan_mode(payload: dict) -> None:
         await broadcast({"kind": "plan_mode_result", "data": result})
     except Exception as e:
         await broadcast({"kind": "error", "data": {"message": str(e)}})
+
+
+async def _handle_switch_session(payload: dict) -> None:
+    """Switch to a different session by restarting kimi with --session."""
+    session_id = payload.get("session_id", "")
+    if not session_id:
+        await broadcast({"kind": "error", "data": {"message": "Missing session_id"}})
+        return
+    logger.info("Switching to session: %s", session_id)
+    await broadcast(
+        {"kind": "system", "data": {"status": "switching", "message": "切换会话中..."}}
+    )
+    try:
+        await ensure_kimi(force_session_id=session_id)
+        await broadcast({"kind": "session_switched", "data": {"session_id": session_id}})
+    except Exception as e:
+        await broadcast({"kind": "error", "data": {"message": f"切换会话失败: {e}"}})
+
+
+async def _handle_new_session() -> None:
+    """Create a new session by restarting kimi without --session or --continue."""
+    logger.info("Creating new session")
+    await broadcast(
+        {"kind": "system", "data": {"status": "switching", "message": "创建新会话..."}}
+    )
+    try:
+        from .wire import _start_kimi
+
+        async with state.lock:
+            if state.process is not None:
+                await shutdown_kimi()
+            state.message_queue = asyncio.Queue()
+            await _start_kimi(force_session_id=None)
+        await broadcast({"kind": "session_switched", "data": {"session_id": state.current_session_id}})
+    except Exception as e:
+        await broadcast({"kind": "error", "data": {"message": f"创建新会话失败: {e}"}})

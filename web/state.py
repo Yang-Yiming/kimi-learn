@@ -18,6 +18,8 @@ class WireState:
         self._write_task: asyncio.Task | None = None
         self._usage_task: asyncio.Task | None = None
         self._usage_lock = asyncio.Lock()
+        self.current_session_id: str | None = None
+        self.slash_commands: list[dict] = []
 
 
 state = WireState()

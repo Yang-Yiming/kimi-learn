@@ -19,10 +19,15 @@
       <div class="logo-version">MVP</div>
     </div>
     <div class="sidebar-content">
-      <div class="section-title">SESSIONS</div>
-      <div class="session-item active">
-        <span>当前会话</span>
-        <span class="session-time">now</span>
+      <div class="section-title">
+        <span>SESSIONS</span>
+        <button class="icon-btn small" id="btn-new-session" onclick="newSession()" title="新建会话">+</button>
+      </div>
+      <div id="session-list">
+        <div class="session-item active" id="session-item-loading">
+          <span>加载中...</span>
+          <span class="session-time"></span>
+        </div>
       </div>
     </div>
     <div class="usage-footer" id="usage-footer">

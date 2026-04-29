@@ -86,12 +86,29 @@ function handleMessage(msg) {
 
   if (kind === 'system') {
     const s = data.status;
-    if (s === 'connected') setStatus('connected', '已连接');
+    if (s === 'connected') {
+      setStatus('connected', '已连接');
+      if (data.init && data.init.slash_commands) {
+        slashCommands = data.init.slash_commands;
+      }
+      if (data.session_id) {
+        currentSessionId = data.session_id;
+      }
+      loadSessions();
+    }
     else if (s === 'disconnected') setStatus('error', '已断开');
     else if (s === 'error') setStatus('error', data.message || '错误');
+    else if (s === 'switching') {
+      setStatus('error', data.message || '切换中...');
+    }
     if (data.message && s !== 'connected') {
       appendRow('system', `<div class="bubble system">${escapeHtml(data.message)}</div>`);
     }
+    return;
+  }
+
+  if (kind === 'session_switched') {
+    onSessionSwitched(data);
     return;
   }
 
@@ -541,6 +558,20 @@ function sendPrompt() {
     return;
   }
 
+  // Intercept web-native slash commands
+  if (text === '/help' || text === '/h' || text === '/?') {
+    userInput.value = '';
+    userInput.style.height = 'auto';
+    showHelpModal(mergeCommands());
+    return;
+  }
+  if (text === '/sessions' || text === '/resume') {
+    userInput.value = '';
+    userInput.style.height = 'auto';
+    loadSessions();
+    return;
+  }
+
   userInput.value = '';
   userInput.style.height = 'auto';
 
@@ -578,13 +609,6 @@ function sendSteer(text) {
 function togglePlanMode() {
   ws.send(JSON.stringify({ kind: 'set_plan_mode', data: { enabled: !planMode } }));
 }
-
-userInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendPrompt();
-  }
-});
 
 userInput.addEventListener('input', () => {
   userInput.style.height = 'auto';
@@ -742,6 +766,291 @@ function closeFilePanel() {
   document.querySelectorAll('.file-sidebar-item').forEach(el => el.classList.remove('selected'));
 }
 
-// Init file sidebar on load
+/* ======== Session Management ======== */
+
+let currentSessionId = null;
+
+async function loadSessions() {
+  try {
+    const res = await fetch('/api/sessions');
+    const data = await res.json();
+    if (!res.ok) return;
+    currentSessionId = data.current_session_id;
+    renderSessions(data.sessions);
+  } catch (e) {
+    console.error('加载会话列表失败:', e);
+  }
+}
+
+function renderSessions(sessions) {
+  const container = document.getElementById('session-list');
+  if (!container) return;
+
+  if (!sessions.length) {
+    container.innerHTML = '<div class="session-item"><span>暂无会话</span></div>';
+    return;
+  }
+
+  let html = '';
+  sessions.forEach(s => {
+    const isActive = s.id === currentSessionId;
+    const timeStr = formatRelativeTime(s.updated_at);
+    html += `<div class="session-item${isActive ? ' active' : ''}" data-id="${escapeHtml(s.id)}" onclick="switchSession('${escapeHtml(s.id)}')">
+      <span>${escapeHtml(s.title)}</span>
+      <span class="session-time">${escapeHtml(timeStr)}</span>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function formatRelativeTime(isoStr) {
+  if (!isoStr) return '';
+  const dt = new Date(isoStr);
+  const now = new Date();
+  const diffMs = now - dt;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'now';
+  if (diffMin < 60) return diffMin + 'm';
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return diffH + 'h';
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 30) return diffD + 'd';
+  return dt.toLocaleDateString('zh-CN');
+}
+
+function switchSession(sessionId) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ kind: 'switch_session', data: { session_id: sessionId } }));
+  // Clear chat area
+  chatInner.innerHTML = '';
+  // Show switching indicator
+  appendRow('system', '<div class="bubble system">切换会话中...</div>');
+}
+
+function newSession() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ kind: 'new_session', data: {} }));
+  chatInner.innerHTML = '';
+  appendRow('system', '<div class="bubble system">创建新会话...</div>');
+}
+
+// Handle session_switched event
+function onSessionSwitched(data) {
+  currentSessionId = data.session_id;
+  loadSessions();
+}
+
+/* ======== Slash Command Palette ======== */
+
+let slashCommands = []; // populated from wire init
+let webNativeCommands = [
+  { name: 'help', aliases: ['h', '?'], description: '显示帮助信息（Web 端实现）' },
+  { name: 'sessions', aliases: ['resume'], description: '列出所有会话并切换' },
+];
+
+let paletteVisible = false;
+let paletteIdx = -1;
+let paletteFiltered = [];
+
+function mergeCommands() {
+  // Start with web-native commands, then add wire commands that don't conflict
+  const names = new Set(webNativeCommands.map(c => c.name));
+  const merged = [...webNativeCommands];
+  for (const cmd of slashCommands) {
+    if (!names.has(cmd.name)) {
+      names.add(cmd.name);
+      merged.push(cmd);
+    }
+  }
+  return merged;
+}
+
+function showPalette(filter) {
+  const all = mergeCommands();
+  const q = (filter || '').toLowerCase();
+  paletteFiltered = q ? all.filter(c => {
+    return c.name.toLowerCase().includes(q) ||
+      (c.description && c.description.toLowerCase().includes(q)) ||
+      (c.aliases || []).some(a => a.toLowerCase().includes(q));
+  }) : all;
+  paletteIdx = paletteFiltered.length > 0 ? 0 : -1;
+
+  let existing = document.getElementById('slash-palette');
+  if (existing) existing.remove();
+
+  if (!paletteFiltered.length) {
+    paletteVisible = false;
+    return;
+  }
+
+  const palette = document.createElement('div');
+  palette.id = 'slash-palette';
+  palette.className = 'slash-palette';
+  let html = '<div class="slash-palette-header">命令</div>';
+  paletteFiltered.forEach((cmd, i) => {
+    const aliases = (cmd.aliases || []).map(a => '/' + a).join(' ');
+    html += `<div class="slash-palette-item${i === 0 ? ' selected' : ''}" data-idx="${i}">
+      <span class="slash-cmd-name">/${escapeHtml(cmd.name)}</span>
+      <span class="slash-cmd-aliases">${escapeHtml(aliases)}</span>
+      <span class="slash-cmd-desc">${escapeHtml(cmd.description || '')}</span>
+    </div>`;
+  });
+  palette.innerHTML = html;
+  document.body.appendChild(palette);
+
+  // Position above input
+  const inputPanel = document.querySelector('.input-panel');
+  const rect = inputPanel.getBoundingClientRect();
+  palette.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+  palette.style.left = rect.left + 'px';
+  palette.style.width = rect.width + 'px';
+
+  paletteVisible = true;
+
+  // Click handler
+  palette.querySelectorAll('.slash-palette-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.idx);
+      selectPaletteItem(idx);
+    });
+  });
+}
+
+function updatePaletteSelection() {
+  const items = document.querySelectorAll('.slash-palette-item');
+  items.forEach((el, i) => el.classList.toggle('selected', i === paletteIdx));
+}
+
+function navigatePalette(down) {
+  if (!paletteFiltered.length) return;
+  paletteIdx += down ? 1 : -1;
+  if (paletteIdx >= paletteFiltered.length) paletteIdx = 0;
+  if (paletteIdx < 0) paletteIdx = paletteFiltered.length - 1;
+  updatePaletteSelection();
+}
+
+function selectPaletteItem(idx) {
+  if (idx < 0 || idx >= paletteFiltered.length) return;
+  const cmd = paletteFiltered[idx];
+  // Handle web-native commands directly
+  if (webNativeCommands.some(c => c.name === cmd.name)) {
+    userInput.value = '';
+    hidePalette();
+    if (cmd.name === 'help') {
+      showHelpModal(mergeCommands());
+    } else if (cmd.name === 'sessions') {
+      // Trigger session list refresh and show
+      loadSessions();
+    }
+    return;
+  }
+  userInput.value = '/' + cmd.name + ' ';
+  userInput.focus();
+  userInput.dispatchEvent(new Event('input'));
+  hidePalette();
+}
+
+function hidePalette() {
+  const palette = document.getElementById('slash-palette');
+  if (palette) palette.remove();
+  paletteVisible = false;
+  paletteIdx = -1;
+  paletteFiltered = [];
+}
+
+function showHelpModal(commands) {
+  let html = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()">';
+  html += '<div class="modal help-modal"><h3>可用命令</h3><div class="help-commands">';
+
+  // Keyboard shortcuts
+  html += '<div class="help-section"><div class="help-section-title">键盘快捷键</div>';
+  const shortcuts = [
+    ['Enter', '发送消息'],
+    ['Shift + Enter', '换行'],
+    ['/', '打开命令面板'],
+    ['↑↓', '导航命令面板'],
+    ['Esc', '关闭面板'],
+  ];
+  shortcuts.forEach(([key, desc]) => {
+    html += `<div class="help-item"><span class="help-key">${escapeHtml(key)}</span><span class="help-desc">${escapeHtml(desc)}</span></div>`;
+  });
+  html += '</div>';
+
+  // Commands
+  html += '<div class="help-section"><div class="help-section-title">斜杠命令</div>';
+  commands.forEach(cmd => {
+    const isWebNative = webNativeCommands.some(c => c.name === cmd.name);
+    html += `<div class="help-item${isWebNative ? ' web-native' : ''}">
+      <span class="help-key">/${escapeHtml(cmd.name)}</span>
+      <span class="help-desc">${escapeHtml(cmd.description || '')}${isWebNative ? ' (Web)' : ''}</span>
+    </div>`;
+  });
+  html += '</div></div>';
+  html += '<div class="buttons"><button class="btn primary" onclick="closeModal()">关闭</button></div>';
+  html += '</div></div>';
+  modalContainer.innerHTML = html;
+}
+
+// Update input keydown handler for slash palette
+userInput.addEventListener('keydown', (e) => {
+  if (paletteVisible) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      navigatePalette(true);
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      navigatePalette(false);
+      return;
+    }
+    if (e.key === 'Enter' && paletteIdx >= 0) {
+      e.preventDefault();
+      selectPaletteItem(paletteIdx);
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      hidePalette();
+      return;
+    }
+  }
+
+  // Existing Enter handling
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendPrompt();
+    return;
+  }
+});
+
+userInput.addEventListener('keyup', (e) => {
+  const val = userInput.value;
+  const cursorPos = userInput.selectionStart;
+
+  if (e.key === '/' && val === '/' && cursorPos === 1) {
+    showPalette('');
+    return;
+  }
+
+  if (paletteVisible && val.startsWith('/')) {
+    const filter = val.slice(1);
+    showPalette(filter);
+    return;
+  }
+
+  if (paletteVisible && !val.startsWith('/')) {
+    hidePalette();
+  }
+});
+
+// Close palette on outside click
+document.addEventListener('click', (e) => {
+  if (paletteVisible && !e.target.closest('#slash-palette') && !e.target.closest('#user-input')) {
+    hidePalette();
+  }
+});
+
+// Init on load
 loadFileSidebar('');
 connect();

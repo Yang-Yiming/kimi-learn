@@ -6,6 +6,7 @@ A WebSocket bridge between browser and `kimi --wire` subprocess.
 """
 
 import io
+import json
 import mimetypes
 import os
 import uuid
@@ -17,8 +18,11 @@ from PIL import Image
 from starlette.responses import FileResponse
 
 from .handlers import ws_endpoint
+from .state import state as wire_state
 
 app = FastAPI()
+
+SESSIONS_DIR = os.path.expanduser("~/.kimi/sessions")
 
 app.websocket("/ws")(ws_endpoint)
 
@@ -95,6 +99,47 @@ async def read_file(path: str = Query(...)):
     except OSError as e:
         raise HTTPException(status_code=500, detail=str(e))
     return {"content": content, "mime": mime or "text/plain", "path": path}
+
+
+@app.get("/api/sessions")
+async def list_sessions():
+    """List kimi-code sessions for all known working directories."""
+    sessions = []
+    if not os.path.isdir(SESSIONS_DIR):
+        return {"sessions": sessions, "current_session_id": wire_state.current_session_id}
+
+    try:
+        for user_dir in sorted(os.listdir(SESSIONS_DIR)):
+            user_path = os.path.join(SESSIONS_DIR, user_dir)
+            if not os.path.isdir(user_path):
+                continue
+            for session_name in sorted(os.listdir(user_path)):
+                session_dir = os.path.join(user_path, session_name)
+                state_file = os.path.join(session_dir, "state.json")
+                if not os.path.isfile(state_file):
+                    continue
+                try:
+                    with open(state_file, "r", encoding="utf-8") as f:
+                        st = json.loads(f.read())
+                except (json.JSONDecodeError, OSError):
+                    continue
+
+                if st.get("archived"):
+                    continue
+
+                mtime = os.path.getmtime(state_file)
+                sessions.append({
+                    "id": session_name,
+                    "title": st.get("custom_title") or "未命名会话",
+                    "work_dir": str(st.get("work_dir", "")),
+                    "plan_mode": st.get("plan_mode", False),
+                    "updated_at": datetime.fromtimestamp(mtime).isoformat(),
+                })
+    except OSError:
+        pass
+
+    sessions.sort(key=lambda s: s["updated_at"], reverse=True)
+    return {"sessions": sessions, "current_session_id": wire_state.current_session_id}
 
 
 MAX_IMAGE_SIZE = 1920  # max width/height in pixels
