@@ -54,10 +54,23 @@
               <span class="dot" id="status-dot"></span>
               <span id="status-text">未连接</span>
             </div>
+            <div class="skill-bar" id="skill-bar">
+              <button class="skill-btn" data-skill="generate-practice" onclick="activateSkill('generate-practice', '生成练习题')">生成练习题</button>
+              <button class="skill-btn" data-skill="generate-reports" onclick="activateSkill('generate-reports', '生成报告')">生成报告</button>
+              <button class="skill-btn" data-skill="generate-review" onclick="activateSkill('generate-review', '生成复习')">生成复习</button>
+              <button class="skill-btn" data-skill="upload-exam" onclick="activateSkill('upload-exam', '上传题目')">上传题目</button>
+              <button class="skill-btn" data-skill="upload-raw" onclick="activateSkill('upload-raw', '上传源文件')">上传源文件</button>
+            </div>
             <div class="context-bar">
               <span class="context-pill" id="status-files">0 files changed</span>
               <span class="context-pill" id="status-context">0% context</span>
             </div>
+          </div>
+          <div class="skill-pill-container" id="skill-pill-container" style="display:none">
+            <span class="skill-pill" id="active-skill-pill">
+              <span id="active-skill-label"></span>
+              <button class="skill-pill-remove" onclick="clearSkill()" title="取消">✕</button>
+            </span>
           </div>
           <div class="input-box">
             <div id="attachment-preview" class="attachment-preview" style="display:none"></div>

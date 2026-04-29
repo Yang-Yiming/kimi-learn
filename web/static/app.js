@@ -13,6 +13,7 @@ let isBusy = false;
 let planMode = false;
 let reconnectTimer = null;
 let pendingAttachments = []; // {file, uploadedPath, mimeType, previewUrl}
+let activeSkill = null; // currently selected skill name
 
 function connect() {
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
@@ -512,6 +513,23 @@ function clearAttachments() {
   renderAttachments();
 }
 
+function activateSkill(skill, label) {
+  if (activeSkill === skill) {
+    clearSkill();
+    return;
+  }
+  activeSkill = skill;
+  document.querySelectorAll('.skill-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.skill === skill);
+  });
+}
+
+function clearSkill() {
+  activeSkill = null;
+  document.querySelectorAll('.skill-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('skill-pill-container').style.display = 'none';
+}
+
 function sendPrompt() {
   const text = userInput.value.trim();
   const hasAttachments = pendingAttachments.length > 0;
@@ -526,7 +544,13 @@ function sendPrompt() {
   userInput.value = '';
   userInput.style.height = 'auto';
 
-  const data = { user_input: text || '(附件)' };
+  let userInputText = text || '(附件)';
+  if (activeSkill) {
+    userInputText = `使用 ${activeSkill} skill\n\n${userInputText}`;
+    clearSkill();
+  }
+
+  const data = { user_input: userInputText };
   if (readyAttachments.length > 0) {
     data.attachments = readyAttachments.map(a => ({
       path: a.uploadedPath,

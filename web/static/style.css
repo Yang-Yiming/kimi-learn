@@ -218,6 +218,8 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
   display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-secondary);
   margin-bottom: 8px; padding: 0 4px;
 }
+.status-bar > div:first-child { flex-shrink: 0; }
+.status-bar .context-bar { flex-shrink: 0; }
 .status-bar .dot {
   width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; background: #ccc;
 }
@@ -227,6 +229,54 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
 .context-bar { display: flex; align-items: center; gap: 12px; }
 .context-pill {
   background: #f5f5f5; padding: 2px 10px; border-radius: 12px; font-size: 11px; color: var(--text-secondary);
+}
+
+/* Skill Bar */
+.skill-bar {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+.skill-btn {
+  padding: 3px 12px; border-radius: 14px; border: 1px solid var(--border);
+  background: #f8f9fa; font-size: 12px; cursor: pointer; color: var(--text-secondary);
+  transition: all 0.15s; white-space: nowrap;
+}
+.skill-btn:hover {
+  background: #f0f0f2; border-color: #ccc;
+}
+.skill-btn.active[data-skill="generate-practice"] {
+  background: #e3f2fd; border-color: var(--accent); color: var(--accent); font-weight: 500;
+}
+.skill-btn.active[data-skill="generate-reports"] {
+  background: #e8f5e9; border-color: #388e3c; color: #388e3c; font-weight: 500;
+}
+.skill-btn.active[data-skill="generate-review"] {
+  background: #f3e5f5; border-color: #7b1fa2; color: #7b1fa2; font-weight: 500;
+}
+.skill-btn.active[data-skill="upload-exam"],
+.skill-btn.active[data-skill="upload-raw"] {
+  background: #fff3e0; border-color: #f57c00; color: #f57c00; font-weight: 500;
+}
+
+.skill-pill-container {
+  padding: 0 4px 6px; display: flex;
+}
+.skill-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 14px;
+  font-size: 13px; font-weight: 500;
+  background: var(--sidebar-active); color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.skill-pill-remove {
+  width: 16px; height: 16px; border-radius: 50%; border: none;
+  background: transparent; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; font-size: 11px;
+  color: var(--accent); padding: 0; margin-left: 2px;
+}
+.skill-pill-remove:hover {
+  background: var(--accent); color: #fff;
 }
 
 .input-box {
@@ -428,4 +478,6 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
   .model-badge { display: none; }
   .attachment-item { max-width: 140px; }
   .attachment-name { max-width: 60px; }
+  .skill-bar { gap: 6px; padding: 6px 0 0; }
+  .skill-btn { padding: 5px 10px; font-size: 12px; }
 }
