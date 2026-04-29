@@ -6,7 +6,14 @@ import time
 
 import httpx
 
-from .config import CREDENTIALS_FILE, POLL_INTERVAL, TOKEN_API, USAGE_API, logger
+from .config import (
+    CREDENTIALS_FILE,
+    KIMI_CODE_CLIENT_ID,
+    POLL_INTERVAL,
+    TOKEN_API,
+    USAGE_API,
+    logger,
+)
 from .state import broadcast, state
 
 _client: httpx.AsyncClient | None = None
@@ -64,10 +71,10 @@ async def refresh_token() -> bool:
     try:
         resp = await _get_client().post(
             TOKEN_API,
-            json={
+            data={
+                "client_id": KIMI_CODE_CLIENT_ID,
                 "grant_type": "refresh_token",
                 "refresh_token": refresh,
-                "scope": "kimi-code",
             },
         )
     except Exception as e:
