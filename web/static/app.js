@@ -466,4 +466,127 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;');
 }
 
+/* File Sidebar */
+let fileSidebarPath = '';
+let fileSidebarItems = [];
+let showAllFiles = false;
+
+function toggleShowAll() {
+  showAllFiles = document.getElementById('show-all-toggle').checked;
+  loadFileSidebar(fileSidebarPath);
+}
+
+async function loadFileSidebar(path) {
+  try {
+    const url = '/api/files?path=' + encodeURIComponent(path) + '&show_all=' + showAllFiles;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) return;
+    fileSidebarPath = data.current_path;
+    fileSidebarItems = data.items || [];
+    renderFileSidebar();
+  } catch (e) {
+    console.error('加载文件列表失败:', e);
+  }
+}
+
+function renderFileSidebar() {
+  const container = document.getElementById('file-sidebar-tree');
+  if (!container) return;
+  let html = '';
+
+  // Breadcrumb
+  html += '<div class="file-sidebar-breadcrumb">';
+  if (fileSidebarPath) {
+    html += '<span onclick="loadFileSidebar(\'\')">根目录</span>';
+    const parts = fileSidebarPath.split('/').filter(Boolean);
+    let acc = '';
+    parts.forEach((part, i) => {
+      acc += (acc ? '/' : '') + part;
+      const isLast = i === parts.length - 1;
+      html += ' / ';
+      if (isLast) {
+        html += '<span class="current">' + escapeHtml(part) + '</span>';
+      } else {
+        html += '<span onclick="loadFileSidebar(\'' + escapeHtml(acc) + '\')">' + escapeHtml(part) + '</span>';
+      }
+    });
+  } else {
+    html += '<span class="current">根目录</span>';
+  }
+  html += '</div>';
+
+  // File list
+  if (fileSidebarPath) {
+    const parent = fileSidebarPath.split('/').slice(0, -1).join('/');
+    html += '<div class="file-sidebar-item" onclick="loadFileSidebar(\'' + escapeHtml(parent) + '\')">';
+    html += '<span class="file-sidebar-icon">📁</span><span class="file-sidebar-name">..</span>';
+    html += '</div>';
+  }
+  fileSidebarItems.forEach(item => {
+    const icon = item.is_dir ? '📁' : '📄';
+    const onclick = item.is_dir
+      ? 'loadFileSidebar(\'' + escapeHtml(item.path) + '\')'
+      : 'openFile(\'' + escapeHtml(item.path) + '\')';
+    html += '<div class="file-sidebar-item" data-path="' + escapeHtml(item.path) + '" onclick="' + onclick + '">';
+    html += '<span class="file-sidebar-icon">' + icon + '</span><span class="file-sidebar-name">' + escapeHtml(item.name) + '</span>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+async function openFile(path) {
+  // Highlight selected file
+  document.querySelectorAll('.file-sidebar-item').forEach(el => el.classList.remove('selected'));
+  const selected = document.querySelector('.file-sidebar-item[data-path="' + CSS.escape(path) + '"]');
+  if (selected) selected.classList.add('selected');
+
+  // Show file panel
+  const panel = document.getElementById('file-panel');
+  const content = document.getElementById('file-panel-content');
+  const title = document.getElementById('file-panel-title');
+  panel.style.display = 'flex';
+  title.textContent = path;
+  content.innerHTML = '<div class="file-panel-empty">加载中...</div>';
+
+  try {
+    const res = await fetch('/api/file?path=' + encodeURIComponent(path));
+    const data = await res.json();
+    if (!res.ok) {
+      content.innerHTML = '<div class="file-panel-error">' + escapeHtml(data.detail || '读取失败') + '</div>';
+      return;
+    }
+    const ext = path.split('.').pop().toLowerCase();
+    const codeLang = {
+      'js': 'javascript', 'ts': 'typescript', 'py': 'python', 'md': 'markdown',
+      'html': 'xml', 'css': 'css', 'json': 'json', 'yaml': 'yaml', 'yml': 'yaml',
+      'sh': 'bash', 'bash': 'bash', 'zsh': 'bash', 'go': 'go', 'rs': 'rust',
+      'java': 'java', 'c': 'c', 'cpp': 'cpp', 'h': 'c', 'hpp': 'cpp',
+      'sql': 'sql', 'xml': 'xml', 'dockerfile': 'dockerfile'
+    }[ext] || '';
+
+    let html = '';
+    if (codeLang) {
+      html += '<pre><code class="language-' + codeLang + '">' + escapeHtml(data.content) + '</code></pre>';
+    } else {
+      html += '<pre>' + escapeHtml(data.content) + '</pre>';
+    }
+    content.innerHTML = html;
+    if (window.hljs) {
+      content.querySelectorAll('pre code').forEach((block) => {
+        if (!block.dataset.highlighted) { hljs.highlightElement(block); block.dataset.highlighted = 'yes'; }
+      });
+    }
+  } catch (e) {
+    content.innerHTML = '<div class="file-panel-error">读取失败: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function closeFilePanel() {
+  document.getElementById('file-panel').style.display = 'none';
+  document.querySelectorAll('.file-sidebar-item').forEach(el => el.classList.remove('selected'));
+}
+
+// Init file sidebar on load
+loadFileSidebar('');
 connect();

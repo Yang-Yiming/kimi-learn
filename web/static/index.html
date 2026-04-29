@@ -45,42 +45,64 @@
       <div class="topbar-path" id="workdir">kimi-learn</div>
     </header>
 
-    <div class="chat-area" id="chat"><div class="chat-inner" id="chat-inner"></div></div>
-
-    <div class="input-panel">
-      <div class="status-bar">
-        <div>
-          <span class="dot" id="status-dot"></span>
-          <span id="status-text">未连接</span>
-        </div>
-        <div class="context-bar">
-          <span class="context-pill" id="status-files">0 files changed</span>
-          <span class="context-pill" id="status-context">0% context</span>
+    <div class="main-body" id="main-body">
+      <div class="chat-panel" id="chat-panel">
+        <div class="chat-area" id="chat"><div class="chat-inner" id="chat-inner"></div></div>
+        <div class="input-panel">
+          <div class="status-bar">
+            <div>
+              <span class="dot" id="status-dot"></span>
+              <span id="status-text">未连接</span>
+            </div>
+            <div class="context-bar">
+              <span class="context-pill" id="status-files">0 files changed</span>
+              <span class="context-pill" id="status-context">0% context</span>
+            </div>
+          </div>
+          <div class="input-box">
+            <textarea id="user-input" rows="1" placeholder="输入消息...（Shift+Enter换行，Enter发送）"></textarea>
+            <div class="input-toolbar">
+              <div class="toolbar-left">
+                <button class="icon-btn" title="附件" onclick="alert('MVP暂未支持附件上传')">📎</button>
+                <span class="model-badge">kimi-for-coding</span>
+                <label class="toggle" title="显示思考过程">
+                  <input type="checkbox" id="thinking-toggle" checked>
+                  <span>Thinking</span>
+                </label>
+                <label class="toggle" title="Plan模式">
+                  <input type="checkbox" id="plan-toggle" onchange="togglePlanMode()">
+                  <span>Plan</span>
+                </label>
+              </div>
+              <div class="toolbar-right">
+                <button class="icon-btn danger" id="btn-cancel" title="取消" onclick="sendCancel()" disabled>✕</button>
+                <button class="send-btn" id="btn-send" onclick="sendPrompt()">➤</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="input-box">
-        <textarea id="user-input" rows="1" placeholder="输入消息...（Shift+Enter换行，Enter发送）"></textarea>
-        <div class="input-toolbar">
-          <div class="toolbar-left">
-            <button class="icon-btn" title="附件" onclick="alert('MVP暂未支持附件上传')">📎</button>
-            <span class="model-badge">kimi-for-coding</span>
-            <label class="toggle" title="显示思考过程">
-              <input type="checkbox" id="thinking-toggle" checked>
-              <span>Thinking</span>
-            </label>
-            <label class="toggle" title="Plan模式">
-              <input type="checkbox" id="plan-toggle" onchange="togglePlanMode()">
-              <span>Plan</span>
-            </label>
-          </div>
-          <div class="toolbar-right">
-            <button class="icon-btn danger" id="btn-cancel" title="取消" onclick="sendCancel()" disabled>✕</button>
-            <button class="send-btn" id="btn-send" onclick="sendPrompt()">➤</button>
-          </div>
+
+      <div class="file-panel" id="file-panel" style="display:none">
+        <div class="file-panel-header">
+          <span class="file-panel-title" id="file-panel-title"></span>
+          <button class="icon-btn" onclick="closeFilePanel()" title="关闭">✕</button>
         </div>
+        <div class="file-panel-content" id="file-panel-content"></div>
       </div>
     </div>
   </main>
+
+  <aside class="file-sidebar" id="file-sidebar">
+    <div class="file-sidebar-header">
+      <span>文件</span>
+      <label class="toggle small" title="展示全部文件">
+        <input type="checkbox" id="show-all-toggle" onchange="toggleShowAll()">
+        <span>全部</span>
+      </label>
+    </div>
+    <div class="file-sidebar-tree" id="file-sidebar-tree"></div>
+  </aside>
 </div>
 
 <div id="modal-container"></div>
