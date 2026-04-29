@@ -60,10 +60,13 @@
             </div>
           </div>
           <div class="input-box">
+            <div id="attachment-preview" class="attachment-preview" style="display:none"></div>
             <textarea id="user-input" rows="1" placeholder="输入消息...（Shift+Enter换行，Enter发送）"></textarea>
             <div class="input-toolbar">
               <div class="toolbar-left">
-                <button class="icon-btn" title="附件" onclick="alert('MVP暂未支持附件上传')">📎</button>
+                <input type="file" id="file-input" style="display:none" accept="image/*,application/pdf,.doc,.docx,.txt,.md" multiple onchange="handleFileSelect(event)">
+                <button class="icon-btn" title="附件" onclick="document.getElementById('file-input').click()">📎</button>
+                <button class="icon-btn mobile-only" title="拍照" onclick="triggerCamera()">📷</button>
                 <span class="model-badge">kimi-for-coding</span>
                 <label class="toggle" title="显示思考过程">
                   <input type="checkbox" id="thinking-toggle" checked>
@@ -105,6 +108,7 @@
   </aside>
 </div>
 
+<input type="file" id="camera-input" style="display:none" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
 <div id="modal-container"></div>
 
 <script src="/static/app.js"></script>

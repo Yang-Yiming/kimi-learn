@@ -12,6 +12,7 @@ let ws = null;
 let isBusy = false;
 let planMode = false;
 let reconnectTimer = null;
+let pendingAttachments = []; // {file, uploadedPath, mimeType, previewUrl}
 
 function connect() {
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
@@ -139,8 +140,21 @@ function handleEvent(params) {
       currentAssistantText = '';
       currentThinkRow = null;
       const input = typeof payload.user_input === 'string' ? payload.user_input : '(多模态输入)';
+      // Check if user_input contains attachment references and render them
+      let userHtml = escapeHtml(input);
+      const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+      let imgMatch;
+      let hasImages = false;
+      let imgHtml = '';
+      while ((imgMatch = imgRegex.exec(input)) !== null) {
+        hasImages = true;
+        imgHtml += `<img src="${escapeHtml(imgMatch[2])}" alt="${escapeHtml(imgMatch[1])}" class="user-attachment-img">`;
+      }
+      if (hasImages) {
+        userHtml += '<div class="user-attachments">' + imgHtml + '</div>';
+      }
       appendRow('user', `
-        <div class="bubble user">${escapeHtml(input)}</div>
+        <div class="bubble user">${userHtml}</div>
         <div class="avatar user">我</div>
       `);
       break;
@@ -403,12 +417,128 @@ function sendResponse(id, result) {
   ws.send(JSON.stringify({ kind: 'response', data: { id, result } }));
 }
 
+function triggerCamera() {
+  document.getElementById('camera-input').click();
+}
+
+function handleFileSelect(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  uploadFiles(files);
+  event.target.value = '';
+}
+
+async function uploadFiles(files) {
+  const previewContainer = document.getElementById('attachment-preview');
+  previewContainer.style.display = 'flex';
+
+  for (const file of files) {
+    const previewUrl = URL.createObjectURL(file);
+    const attachment = {
+      file: file,
+      uploadedPath: null,
+      mimeType: file.type,
+      previewUrl: previewUrl,
+      name: file.name,
+      uploading: true,
+    };
+    pendingAttachments.push(attachment);
+    renderAttachments();
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        attachment.uploadedPath = data.path;
+        attachment.uploading = false;
+      } else {
+        attachment.error = data.detail || '上传失败';
+        attachment.uploading = false;
+      }
+    } catch (e) {
+      attachment.error = '网络错误';
+      attachment.uploading = false;
+    }
+    renderAttachments();
+  }
+}
+
+function renderAttachments() {
+  const container = document.getElementById('attachment-preview');
+  if (!pendingAttachments.length) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+  container.style.display = 'flex';
+  let html = '';
+  pendingAttachments.forEach((att, idx) => {
+    const isImage = att.mimeType && att.mimeType.startsWith('image/');
+    html += `<div class="attachment-item ${att.uploading ? 'uploading' : ''} ${att.error ? 'error' : ''}">`;
+    if (isImage && att.previewUrl) {
+      html += `<img src="${att.previewUrl}" alt="${escapeHtml(att.name)}" class="attachment-thumb">`;
+    } else {
+      html += `<div class="attachment-file">📄</div>`;
+    }
+    html += `<span class="attachment-name">${escapeHtml(att.name)}</span>`;
+    if (att.uploading) {
+      html += `<span class="attachment-status">⏳</span>`;
+    } else if (att.error) {
+      html += `<span class="attachment-status" title="${escapeHtml(att.error)}">❌</span>`;
+    } else {
+      html += `<span class="attachment-status">✅</span>`;
+    }
+    html += `<button class="attachment-remove" onclick="removeAttachment(${idx})">✕</button>`;
+    html += `</div>`;
+  });
+  container.innerHTML = html;
+}
+
+function removeAttachment(index) {
+  const att = pendingAttachments[index];
+  if (att.previewUrl) URL.revokeObjectURL(att.previewUrl);
+  pendingAttachments.splice(index, 1);
+  renderAttachments();
+}
+
+function clearAttachments() {
+  pendingAttachments.forEach(att => {
+    if (att.previewUrl) URL.revokeObjectURL(att.previewUrl);
+  });
+  pendingAttachments = [];
+  renderAttachments();
+}
+
 function sendPrompt() {
   const text = userInput.value.trim();
-  if (!text || isBusy) return;
+  const hasAttachments = pendingAttachments.length > 0;
+  const readyAttachments = pendingAttachments.filter(a => a.uploadedPath && !a.error);
+
+  if ((!text && !hasAttachments) || isBusy) return;
+  if (hasAttachments && readyAttachments.length !== pendingAttachments.length) {
+    alert('请等待所有附件上传完成');
+    return;
+  }
+
   userInput.value = '';
   userInput.style.height = 'auto';
-  ws.send(JSON.stringify({ kind: 'prompt', data: { user_input: text } }));
+
+  const data = { user_input: text || '(附件)' };
+  if (readyAttachments.length > 0) {
+    data.attachments = readyAttachments.map(a => ({
+      path: a.uploadedPath,
+      name: a.name,
+      mime_type: a.mimeType,
+    }));
+  }
+
+  ws.send(JSON.stringify({ kind: 'prompt', data }));
+
+  // Clear attachments after sending
+  clearAttachments();
 }
 
 function sendCancel() {

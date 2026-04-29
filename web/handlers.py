@@ -61,11 +61,28 @@ async def ws_endpoint(ws: WebSocket) -> None:
 
 
 async def _handle_prompt(payload: dict) -> None:
+    user_input = payload.get("user_input", "")
+    attachments = payload.get("attachments", [])
+
+    # Append file references to user_input so Kimi can read them
+    if attachments:
+        refs = []
+        for att in attachments:
+            path = att.get("path", "")
+            name = att.get("name", path)
+            mime = att.get("mime_type", "")
+            if mime.startswith("image/"):
+                refs.append(f"![{name}]({path})")
+            else:
+                refs.append(f"- {name}: {path}")
+        attachment_block = "\n\n" + "\n".join(refs)
+        user_input = user_input + attachment_block if user_input else attachment_block
+
     msg = {
         "jsonrpc": "2.0",
         "method": "prompt",
         "id": str(uuid.uuid4()),
-        "params": {"user_input": payload.get("user_input", "")},
+        "params": {"user_input": user_input},
     }
     try:
         result = await send_to_kimi(msg)

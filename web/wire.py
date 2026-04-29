@@ -97,6 +97,7 @@ async def ensure_kimi() -> None:
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            limit=5 * 1024 * 1024,  # 5MB buffer for large JSON lines
         )
         state._read_task = asyncio.create_task(_read_stdout())
         state._write_task = asyncio.create_task(_write_stdin())

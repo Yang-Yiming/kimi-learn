@@ -331,6 +331,83 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
 .modal .btn.danger { color: var(--danger); border-color: #ffcdd2; }
 .modal .btn.danger:hover { background: #ffebee; }
 
+/* User attachment images in chat */
+.user-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.user-attachment-img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* Attachments */
+.attachment-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  font-size: 12px;
+  max-width: 200px;
+  position: relative;
+}
+.attachment-item.uploading { opacity: 0.7; }
+.attachment-item.error { background: #ffebee; }
+.attachment-thumb {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.attachment-file {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
+  color: var(--text-secondary);
+}
+.attachment-status { font-size: 11px; flex-shrink: 0; }
+.attachment-remove {
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #999;
+  border-radius: 4px;
+  padding: 0;
+  margin-left: 2px;
+}
+.attachment-remove:hover { background: #e0e0e0; color: var(--danger); }
+
+/* Mobile */
+.mobile-only { display: none; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -344,4 +421,11 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
   .input-panel { padding: 10px 12px 12px; }
   .file-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); }
   .main-body { flex-direction: column; }
+  .mobile-only { display: inline-flex; }
+  .bubble { max-width: 92%; font-size: 15px; }
+  .input-toolbar { gap: 4px; }
+  .toolbar-left { gap: 4px; }
+  .model-badge { display: none; }
+  .attachment-item { max-width: 140px; }
+  .attachment-name { max-width: 60px; }
 }
