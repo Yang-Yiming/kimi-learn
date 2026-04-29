@@ -54,7 +54,7 @@ async def ws_endpoint(ws: WebSocket) -> None:
                 await ws.send_json(
                     {"kind": "error", "data": {"message": f"Unknown kind: {kind}"}}
                 )
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):
         logger.info("WebSocket client disconnected")
     finally:
         state.clients.discard(ws)
