@@ -1051,6 +1051,64 @@ document.addEventListener('click', (e) => {
   }
 });
 
+/* ── Sidebar & Drawer ─────────────────────────────────────────────── */
+
+const SIDEBAR_STATE_KEY = 'sidebar_collapsed';
+const FILE_SIDEBAR_STATE_KEY = 'file_sidebar_collapsed';
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.toggle('collapsed');
+  localStorage.setItem(SIDEBAR_STATE_KEY, sb.classList.contains('collapsed'));
+}
+
+function toggleFileSidebar() {
+  const fsb = document.getElementById('file-sidebar');
+  fsb.classList.toggle('collapsed');
+  localStorage.setItem(FILE_SIDEBAR_STATE_KEY, fsb.classList.contains('collapsed'));
+}
+
+function initSidebarState() {
+  const sb = document.getElementById('sidebar');
+  const fsb = document.getElementById('file-sidebar');
+  if (localStorage.getItem(SIDEBAR_STATE_KEY) === 'true') sb.classList.add('collapsed');
+  if (localStorage.getItem(FILE_SIDEBAR_STATE_KEY) === 'true') fsb.classList.add('collapsed');
+}
+
+/* Mobile drawers */
+function openSessionDrawer() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('drawer-backdrop').classList.add('show');
+}
+
+function closeSessionDrawer() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('drawer-backdrop').classList.remove('show');
+}
+
+function openFileDrawer() {
+  document.getElementById('file-sidebar').classList.add('open');
+  document.getElementById('drawer-backdrop').classList.add('show');
+}
+
+function closeFileDrawer() {
+  document.getElementById('file-sidebar').classList.remove('open');
+  document.getElementById('drawer-backdrop').classList.remove('show');
+}
+
+function closeDrawers() {
+  closeSessionDrawer();
+  closeFileDrawer();
+}
+
+/* ESC closes drawers (and palette) */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeDrawers();
+  }
+});
+
 // Init on load
+initSidebarState();
 loadFileSidebar('');
 connect();

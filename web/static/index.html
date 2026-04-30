@@ -12,8 +12,9 @@
 <body>
 
 <div class="app">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
+      <button class="icon-btn sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="收起/展开" aria-label="收起侧边栏">‹</button>
       <div class="logo-icon">K</div>
       <div class="logo-text">Kimi Wire</div>
       <div class="logo-version">MVP</div>
@@ -46,8 +47,10 @@
 
   <main class="main">
     <header class="topbar">
+      <button class="icon-btn drawer-btn mobile-only" id="btn-session-drawer" onclick="openSessionDrawer()" title="会话列表" aria-label="打开会话列表">☰</button>
       <div class="topbar-title">Chat</div>
       <div class="topbar-path" id="workdir">kimi-learn</div>
+      <button class="icon-btn drawer-btn mobile-only" id="btn-file-drawer" onclick="openFileDrawer()" title="文件列表" aria-label="打开文件列表">📁</button>
     </header>
 
     <div class="main-body" id="main-body">
@@ -116,6 +119,7 @@
 
   <aside class="file-sidebar" id="file-sidebar">
     <div class="file-sidebar-header">
+      <button class="icon-btn sidebar-toggle" id="file-sidebar-toggle" onclick="toggleFileSidebar()" title="收起/展开" aria-label="收起文件侧边栏">›</button>
       <span>文件</span>
       <label class="toggle small" title="展示全部文件">
         <input type="checkbox" id="show-all-toggle" onchange="toggleShowAll()">
@@ -126,6 +130,7 @@
   </aside>
 </div>
 
+<div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawers()"></div>
 <input type="file" id="camera-input" style="display:none" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
 <div id="modal-container"></div>
 

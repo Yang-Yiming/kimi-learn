@@ -18,12 +18,16 @@
   --shadow: 0 2px 8px rgba(0,0,0,0.08);
   --radius: 12px;
   --radius-sm: 8px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 48px;
+  --file-sidebar-width: 240px;
+  --drawer-width: 280px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--main-bg); color: var(--text); }
 
-.app { display: flex; height: 100vh; overflow: hidden; }
+.app { display: flex; height: 100dvh; overflow: hidden; }
 
 /* Sidebar */
 .sidebar {
@@ -39,7 +43,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
 }
 .logo-text { color: var(--text); font-weight: 600; font-size: 15px; }
 .logo-version { color: var(--text-secondary); font-size: 11px; margin-left: auto; }
-.sidebar-content { flex: 1; overflow-y: auto; padding: 12px; }
+.sidebar-content { flex: 1; overflow-y: auto; padding: 12px; -webkit-overflow-scrolling: touch; }
 .section-title {
   font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-secondary);
   margin-bottom: 8px; padding: 0 8px;
@@ -71,6 +75,71 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
 .usage-bar.yellow { background: #f59e0b; }
 .usage-bar.red { background: var(--danger); }
 .usage-text { font-size: 11px; color: var(--text-secondary); width: 48px; text-align: right; flex-shrink: 0; }
+
+/* Sidebar Toggle & Collapsed State */
+.sidebar-toggle {
+  width: 28px; height: 28px; border-radius: 6px; font-size: 18px; font-weight: 600;
+  color: var(--text-secondary); transition: transform 0.25s ease;
+}
+.sidebar-toggle:hover { background: #f0f0f0; }
+
+.sidebar {
+  width: var(--sidebar-width); background: var(--sidebar-bg); color: var(--sidebar-text);
+  display: flex; flex-direction: column; flex-shrink: 0; user-select: none;
+  transition: width 0.25s ease;
+}
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+.sidebar.collapsed .sidebar-header {
+  padding: 12px 10px; justify-content: center;
+}
+.sidebar.collapsed .sidebar-toggle {
+  transform: rotate(180deg);
+}
+.sidebar.collapsed .logo-icon { display: none; }
+.sidebar.collapsed .logo-text { display: none; }
+.sidebar.collapsed .logo-version { display: none; }
+.sidebar.collapsed .sidebar-content {
+  padding: 8px 4px;
+}
+.sidebar.collapsed .section-title {
+  justify-content: center; padding: 0;
+}
+.sidebar.collapsed .section-title > span { display: none; }
+.sidebar.collapsed #btn-new-session {
+  width: 36px; height: 36px; border-radius: 8px; font-size: 20px;
+}
+.sidebar.collapsed .session-item {
+  padding: 10px 0; justify-content: center;
+}
+.sidebar.collapsed .session-item span:first-child { display: none; }
+.sidebar.collapsed .session-time { display: none; }
+.sidebar.collapsed .usage-footer { display: none; }
+
+.file-sidebar {
+  width: var(--file-sidebar-width); background: var(--sidebar-bg); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0; user-select: none;
+  transition: width 0.25s ease;
+}
+.file-sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+.file-sidebar.collapsed .file-sidebar-header {
+  padding: 10px 6px; justify-content: center;
+}
+.file-sidebar.collapsed .sidebar-toggle {
+  transform: rotate(180deg);
+}
+.file-sidebar.collapsed .file-sidebar-header > span { display: none; }
+.file-sidebar.collapsed .file-sidebar-header .toggle { display: none; }
+.file-sidebar.collapsed .file-sidebar-tree {
+  padding: 4px 0;
+}
+.file-sidebar.collapsed .file-sidebar-item {
+  padding: 6px 0; justify-content: center;
+}
+.file-sidebar.collapsed .file-sidebar-name { display: none; }
 
 /* Main */
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -166,6 +235,9 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
 /* Chat */
 .chat-area {
   flex: 1; overflow-y: auto; padding: 20px 0; display: flex; flex-direction: column; gap: 4px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }
 .chat-inner { max-width: 900px; width: 100%; margin: 0 auto; padding: 0 20px; display: flex; flex-direction: column; gap: 4px; }
 
@@ -455,7 +527,17 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
 }
 .attachment-remove:hover { background: #e0e0e0; color: var(--danger); }
 
-/* Mobile */
+/* Drawer & Mobile */
+.drawer-backdrop {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(0,0,0,0.4);
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.drawer-backdrop.show { opacity: 1; visibility: visible; }
+
+.drawer-btn { display: none; }
+
 .mobile-only { display: none; }
 
 /* Scrollbar */
@@ -465,13 +547,28 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
 ::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
 @media (max-width: 768px) {
-  .sidebar { display: none; }
-  .file-sidebar { display: none; }
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: var(--drawer-width); z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  .file-sidebar {
+    position: fixed; right: 0; top: 0; bottom: 0;
+    width: var(--drawer-width); z-index: 200;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+  }
+  .file-sidebar.open { transform: translateX(0); }
+
   .chat-inner { padding: 0 12px; }
   .input-panel { padding: 10px 12px 12px; }
   .file-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); }
   .main-body { flex-direction: column; }
   .mobile-only { display: inline-flex; }
+  .drawer-btn { display: inline-flex; }
   .bubble { max-width: 92%; font-size: 15px; }
   .input-toolbar { gap: 4px; }
   .toolbar-left { gap: 4px; }
@@ -480,6 +577,9 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
   .attachment-name { max-width: 60px; }
   .skill-bar { gap: 6px; padding: 6px 0 0; }
   .skill-btn { padding: 5px 10px; font-size: 12px; }
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-title { flex: 1; }
+  .topbar-path { display: none; }
 }
 
 /* Slash Command Palette */
