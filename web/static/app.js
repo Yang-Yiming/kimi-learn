@@ -224,7 +224,7 @@ function handleEvent(params) {
         try { argsObj = JSON.parse(args); } catch(e) {}
         const html = `<div class="avatar ai" style="visibility:hidden"></div>
           <div class="bubble tool">
-            <div style="font-weight:600;color:var(--accent);margin-bottom:6px;">🔧 ${escapeHtml(name)}</div>
+            <div style="font-weight:600;color:var(--accent);margin-bottom:6px;"><span class="icon icon-tool"></span> ${escapeHtml(name)}</div>
             <pre><code>${escapeHtml(JSON.stringify(argsObj, null, 2))}</code></pre>
           </div>`;
         appendRow('tool', html);
@@ -236,9 +236,9 @@ function handleEvent(params) {
         const rv = payload.return_value;
         let html = `<div class="avatar ai" style="visibility:hidden"></div><div class="bubble tool">`;
         if (rv.is_error) {
-          html += `<div style="color:var(--danger);font-weight:600;">❌ 工具错误</div>`;
+          html += `<div style="color:var(--danger);font-weight:600;"><span class="icon icon-error"></span> 工具错误</div>`;
         } else {
-          html += `<div style="color:var(--success);font-weight:600;">✅ 工具结果</div>`;
+          html += `<div style="color:var(--success);font-weight:600;"><span class="icon icon-success"></span> 工具结果</div>`;
         }
         if (rv.message) html += `<p>${escapeHtml(rv.message)}</p>`;
         if (typeof rv.output === 'string') {
@@ -270,7 +270,7 @@ function handleEvent(params) {
       {
         const html = `<div class="avatar ai">AI</div>
           <div class="bubble assistant">
-            <div style="font-weight:600;margin-bottom:8px;">📋 计划 <span style="font-size:12px;color:var(--text-secondary);">${escapeHtml(payload.file_path)}</span></div>
+            <div style="font-weight:600;margin-bottom:8px;"><span class="icon icon-plan"></span> 计划 <span style="font-size:12px;color:var(--text-secondary);">${escapeHtml(payload.file_path)}</span></div>
             <div>${marked.parse(payload.content)}</div>
           </div>`;
         appendRow('assistant', html);
@@ -278,7 +278,7 @@ function handleEvent(params) {
       break;
 
     case 'SteerInput':
-      appendRow('system', `<div class="bubble system">📝 追加输入已接收</div>`);
+      appendRow('system', `<div class="bubble system"><span class="icon icon-note"></span> 追加输入已接收</div>`);
       break;
 
     default:
@@ -327,8 +327,8 @@ function renderTodo(items) {
   if (!items || !items.length) return '';
   let html = '<div class="todo-box">';
   items.forEach(item => {
-    const icon = item.status === 'done' ? '✅' : item.status === 'in_progress' ? '⏳' : '⬜';
-    html += `<div class="todo-item"><span class="todo-icon">${icon}</span><span>${escapeHtml(item.title)}</span></div>`;
+    const iconClass = item.status === 'done' ? 'icon-success' : item.status === 'in_progress' ? 'icon-progress' : 'icon-pending';
+    html += `<div class="todo-item"><span class="todo-icon icon ${iconClass}"></span><span>${escapeHtml(item.title)}</span></div>`;
   });
   html += '</div>';
   return html;
@@ -357,7 +357,7 @@ function showApprovalModal(id, payload) {
   const html = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
       <div class="modal">
-        <h3>🔒 需要确认</h3>
+        <h3><span class="icon icon-lock"></span> 需要确认</h3>
         <p><strong>操作:</strong> ${escapeHtml(payload.action)}</p>
         <p><strong>说明:</strong> ${escapeHtml(payload.description)}</p>
         ${displayHtml}
@@ -376,7 +376,7 @@ function showQuestionModal(id, payload) {
   const questions = payload.questions || [];
   window._lastQuestionPayload = payload;
   let html = `<div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-    <div class="modal"><h3>❓ 请回答</h3>`;
+    <div class="modal"><h3><span class="icon icon-question"></span> 请回答</h3>`;
   questions.forEach((q, qi) => {
     html += `<div style="margin-bottom:16px;" data-q="${escapeHtml(q.question)}">
       <p style="font-weight:600;margin-bottom:8px;">${escapeHtml(q.question)}</p>
@@ -499,17 +499,17 @@ function renderAttachments() {
     if (isImage && att.previewUrl) {
       html += `<img src="${att.previewUrl}" alt="${escapeHtml(att.name)}" class="attachment-thumb">`;
     } else {
-      html += `<div class="attachment-file">📄</div>`;
+      html += `<div class="attachment-file"><span class="icon icon-file"></span></div>`;
     }
     html += `<span class="attachment-name">${escapeHtml(att.name)}</span>`;
     if (att.uploading) {
-      html += `<span class="attachment-status">⏳</span>`;
+      html += `<span class="attachment-status"><span class="icon icon-progress"></span></span>`;
     } else if (att.error) {
-      html += `<span class="attachment-status" title="${escapeHtml(att.error)}">❌</span>`;
+      html += `<span class="attachment-status" title="${escapeHtml(att.error)}"><span class="icon icon-error"></span></span>`;
     } else {
-      html += `<span class="attachment-status">✅</span>`;
+      html += `<span class="attachment-status"><span class="icon icon-success"></span></span>`;
     }
-    html += `<button class="attachment-remove" onclick="removeAttachment(${idx})">✕</button>`;
+    html += `<button class="attachment-remove" onclick="removeAttachment(${idx})"><span class="icon icon-close"></span></button>`;
     html += `</div>`;
   });
   container.innerHTML = html;
@@ -698,17 +698,17 @@ function renderFileSidebar() {
   if (fileSidebarPath) {
     const parent = fileSidebarPath.split('/').slice(0, -1).join('/');
     html += '<div class="file-sidebar-item" onclick="loadFileSidebar(\'' + escapeHtml(parent) + '\')">';
-    html += '<span class="file-sidebar-icon">📁</span><span class="file-sidebar-name">..</span>';
+    html += '<span class="file-sidebar-icon icon icon-folder"></span><span class="file-sidebar-name">..</span>';
     html += '</div>';
   }
   fileSidebarItems.forEach(item => {
-    const icon = item.is_dir ? '📁' : '📄';
+    const iconClass = item.is_dir ? 'icon-folder' : 'icon-file';
     const displayName = item.display_name || item.name;
     const onclick = item.is_dir
       ? 'loadFileSidebar(\'' + escapeHtml(item.path) + '\')'
       : 'openFile(\'' + escapeHtml(item.path) + '\')';
     html += '<div class="file-sidebar-item" data-path="' + escapeHtml(item.path) + '" onclick="' + onclick + '">';
-    html += '<span class="file-sidebar-icon">' + icon + '</span><span class="file-sidebar-name">' + escapeHtml(displayName) + '</span>';
+    html += '<span class="file-sidebar-icon icon ' + iconClass + '"></span><span class="file-sidebar-name">' + escapeHtml(displayName) + '</span>';
     html += '</div>';
   });
   container.innerHTML = html;
@@ -844,7 +844,7 @@ function onSessionSwitched(data) {
   });
   // Show success feedback
   if (data.title) {
-    appendRow('system', `<div class="bubble system">✅ 已切换到: ${escapeHtml(data.title)}</div>`);
+    appendRow('system', `<div class="bubble system"><span class="icon icon-success"></span> 已切换到: ${escapeHtml(data.title)}</div>`);
   }
   loadSessions();
   loadSessionHistory(data.session_id);

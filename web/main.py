@@ -53,10 +53,10 @@ async def root():
 
 WHITELIST_DIRS = {"custom", "practice", "reports", "review"}
 DISPLAY_NAMES = {
-    "custom": "📋 学习档案",
-    "practice": "✏️ 练习题",
-    "reports": "📊 学习报告",
-    "review": "📚 复习计划",
+    "custom": "学习档案",
+    "practice": "练习题",
+    "reports": "学习报告",
+    "review": "复习计划",
 }
 
 

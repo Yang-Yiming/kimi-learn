@@ -47,10 +47,10 @@
 
   <main class="main">
     <header class="topbar">
-      <button class="icon-btn drawer-btn mobile-only" id="btn-session-drawer" onclick="openSessionDrawer()" title="会话列表" aria-label="打开会话列表">☰</button>
+      <button class="icon-btn drawer-btn mobile-only" id="btn-session-drawer" onclick="openSessionDrawer()" title="会话列表" aria-label="打开会话列表"><span class="icon icon-menu"></span></button>
       <div class="topbar-title">Chat</div>
       <div class="topbar-path" id="workdir">kimi-learn</div>
-      <button class="icon-btn drawer-btn mobile-only" id="btn-file-drawer" onclick="openFileDrawer()" title="文件列表" aria-label="打开文件列表">📁</button>
+      <button class="icon-btn drawer-btn mobile-only" id="btn-file-drawer" onclick="openFileDrawer()" title="文件列表" aria-label="打开文件列表"><span class="icon icon-folder"></span></button>
     </header>
 
     <div class="main-body" id="main-body">
@@ -77,7 +77,7 @@
           <div class="skill-pill-container" id="skill-pill-container" style="display:none">
             <span class="skill-pill" id="active-skill-pill">
               <span id="active-skill-label"></span>
-              <button class="skill-pill-remove" onclick="clearSkill()" title="取消">✕</button>
+              <button class="skill-pill-remove" onclick="clearSkill()" title="取消"><span class="icon icon-close"></span></button>
             </span>
           </div>
           <div class="input-box">
@@ -86,8 +86,8 @@
             <div class="input-toolbar">
               <div class="toolbar-left">
                 <input type="file" id="file-input" style="display:none" accept="image/*,application/pdf,.doc,.docx,.txt,.md" multiple onchange="handleFileSelect(event)">
-                <button class="icon-btn" title="附件" onclick="document.getElementById('file-input').click()">📎</button>
-                <button class="icon-btn mobile-only" title="拍照" onclick="triggerCamera()">📷</button>
+                <button class="icon-btn" title="附件" onclick="document.getElementById('file-input').click()"><span class="icon icon-attach"></span></button>
+                <button class="icon-btn mobile-only" title="拍照" onclick="triggerCamera()"><span class="icon icon-camera"></span></button>
                 <span class="model-badge">kimi-for-coding</span>
                 <label class="toggle" title="显示思考过程">
                   <input type="checkbox" id="thinking-toggle" checked>
@@ -99,8 +99,8 @@
                 </label>
               </div>
               <div class="toolbar-right">
-                <button class="icon-btn danger" id="btn-cancel" title="取消" onclick="sendCancel()" disabled>✕</button>
-                <button class="send-btn" id="btn-send" onclick="sendPrompt()">➤</button>
+                <button class="icon-btn danger" id="btn-cancel" title="取消" onclick="sendCancel()" disabled><span class="icon icon-close"></span></button>
+                <button class="send-btn" id="btn-send" onclick="sendPrompt()"><span class="icon icon-send"></span></button>
               </div>
             </div>
           </div>
@@ -110,7 +110,7 @@
       <div class="file-panel" id="file-panel" style="display:none">
         <div class="file-panel-header">
           <span class="file-panel-title" id="file-panel-title"></span>
-          <button class="icon-btn" onclick="closeFilePanel()" title="关闭">✕</button>
+          <button class="icon-btn" onclick="closeFilePanel()" title="关闭"><span class="icon icon-close"></span></button>
         </div>
         <div class="file-panel-content" id="file-panel-content"></div>
       </div>
