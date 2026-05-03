@@ -24,6 +24,17 @@ app = FastAPI()
 
 SESSIONS_DIR = os.path.expanduser("~/.kimi/sessions")
 
+
+def _find_session_dir(session_id: str) -> str | None:
+    """Find the session directory path by session_id."""
+    if not os.path.isdir(SESSIONS_DIR):
+        return None
+    for user_dir in os.listdir(SESSIONS_DIR):
+        session_dir = os.path.join(SESSIONS_DIR, user_dir, session_id)
+        if os.path.isdir(session_dir):
+            return session_dir
+    return None
+
 app.websocket("/ws")(ws_endpoint)
 
 _static_dir = os.path.join(os.path.dirname(__file__), "static")
@@ -140,6 +151,37 @@ async def list_sessions():
 
     sessions.sort(key=lambda s: s["updated_at"], reverse=True)
     return {"sessions": sessions, "current_session_id": wire_state.current_session_id}
+
+
+@app.get("/api/sessions/{session_id}/history")
+async def get_session_history(session_id: str):
+    """Return the conversation history (wire events) for a session."""
+    session_dir = _find_session_dir(session_id)
+    if not session_dir:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    wire_file = os.path.join(session_dir, "wire.jsonl")
+    if not os.path.isfile(wire_file):
+        return {"events": []}
+
+    events = []
+    try:
+        with open(wire_file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                msg = obj.get("message")
+                if msg:
+                    events.append(msg)
+    except OSError:
+        pass
+
+    return {"events": events}
 
 
 MAX_IMAGE_SIZE = 1920  # max width/height in pixels

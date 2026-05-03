@@ -820,24 +820,56 @@ function formatRelativeTime(isoStr) {
 
 function switchSession(sessionId) {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  if (sessionId === currentSessionId) return; // already on this session
   ws.send(JSON.stringify({ kind: 'switch_session', data: { session_id: sessionId } }));
-  // Clear chat area
   chatInner.innerHTML = '';
-  // Show switching indicator
-  appendRow('system', '<div class="bubble system">切换会话中...</div>');
 }
 
 function newSession() {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
   ws.send(JSON.stringify({ kind: 'new_session', data: {} }));
   chatInner.innerHTML = '';
-  appendRow('system', '<div class="bubble system">创建新会话...</div>');
 }
 
 // Handle session_switched event
 function onSessionSwitched(data) {
   currentSessionId = data.session_id;
+  // Remove the "switching" / "creating" indicator messages
+  const rows = chatInner.querySelectorAll('.message-row.system');
+  rows.forEach(row => {
+    const text = row.textContent || '';
+    if (text.includes('切换会话中') || text.includes('创建新会话')) {
+      row.remove();
+    }
+  });
+  // Show success feedback
+  if (data.title) {
+    appendRow('system', `<div class="bubble system">✅ 已切换到: ${escapeHtml(data.title)}</div>`);
+  }
   loadSessions();
+  loadSessionHistory(data.session_id);
+}
+
+async function loadSessionHistory(sessionId) {
+  if (!sessionId) return;
+  try {
+    const res = await fetch('/api/sessions/' + encodeURIComponent(sessionId) + '/history');
+    const data = await res.json();
+    if (!res.ok || !data.events || !data.events.length) return;
+
+    // Reset state before replaying history
+    currentAssistantRow = null;
+    currentAssistantText = '';
+    currentThinkRow = null;
+
+    for (const evt of data.events) {
+      handleEvent(evt);
+    }
+    // Ensure UI is not stuck in busy state after replay
+    setBusy(false);
+  } catch (e) {
+    console.error('加载历史记录失败:', e);
+  }
 }
 
 /* ======== Slash Command Palette ======== */

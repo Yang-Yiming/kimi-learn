@@ -162,6 +162,9 @@ async def _start_kimi(force_session_id: str | None = None) -> None:
         logger.info("initialize response: %s", result)
         init_result = result.get("result", {})
         state.slash_commands = init_result.get("slash_commands", [])
+        # Capture session_id from init result for new sessions
+        if not state.current_session_id:
+            state.current_session_id = init_result.get("session_id")
         await broadcast(
             {
                 "kind": "system",

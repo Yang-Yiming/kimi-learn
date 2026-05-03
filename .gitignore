@@ -1,5 +1,6 @@
 __pycache__
 .venv
+.playwright-mcp
 assets
 custom
 practice
