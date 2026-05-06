@@ -1140,7 +1140,49 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+/* ── Network Info (mobile access) ─────────────────────────────────── */
+
+async function loadNetworkInfo() {
+  try {
+    const res = await fetch('/api/network');
+    if (!res.ok) return;
+    const data = await res.json();
+    const el = document.getElementById('status-ip');
+    if (!el || !data.url) return;
+    // Only show if we have a non-localhost IP
+    if (data.host && data.host !== '127.0.0.1' && !data.host.startsWith('127.')) {
+      el.textContent = data.host + ':' + data.port;
+      el.style.display = 'inline-flex';
+      el.onclick = () => copyToClipboard(data.url, el);
+    }
+  } catch (e) {
+    // Silently ignore — this is optional UX enhancement
+  }
+}
+
+async function copyToClipboard(text, el) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const original = el.textContent;
+    el.textContent = '已复制';
+    el.classList.add('copied');
+    setTimeout(() => {
+      el.textContent = original;
+      el.classList.remove('copied');
+    }, 1200);
+  } catch (e) {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
 // Init on load
 initSidebarState();
 loadFileSidebar('');
+loadNetworkInfo();
 connect();

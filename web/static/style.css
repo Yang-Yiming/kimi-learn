@@ -308,7 +308,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
   height: 48px; background: var(--surface); border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0;
 }
-.topbar-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 18px; letter-spacing: -0.02em; }
+.topbar-title { font-family: "Newsreader", Georgia, serif; font-weight: 400; font-size: 18px; letter-spacing: -0.02em; flex: 1; }
 .topbar-path {
   font-size: 12px; color: var(--text-secondary); background: #f4f4f5; padding: 3px 8px;
   border-radius: var(--radius-sm); font-family: "SF Mono", Monaco, monospace; border: 1px solid var(--border);
@@ -383,6 +383,28 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
 .context-bar { display: flex; align-items: center; gap: 12px; }
 .context-pill {
   background: #f4f4f5; padding: 2px 8px; border-radius: var(--radius-sm); font-size: 11px; color: var(--text-secondary); border: 1px solid var(--border);
+}
+.topbar-ip {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: #f4f4f5;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-family: "SF Mono", Monaco, monospace;
+  cursor: pointer;
+  user-select: all;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  margin-left: auto;
+}
+.topbar-ip:hover {
+  background: #e4e4e7;
+  border-color: #a1a1aa;
+}
+.topbar-ip.copied {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
 }
 
 /* Skill Bar */

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-Kimi Wire Web Bridge - MVP
+Kimi Learn Web Bridge - MVP
 A WebSocket bridge between browser and `kimi --wire` subprocess.
 """
 
@@ -9,6 +9,7 @@ import io
 import json
 import mimetypes
 import os
+import socket
 import uuid
 from datetime import datetime
 
@@ -34,6 +35,7 @@ def _find_session_dir(session_id: str) -> str | None:
         if os.path.isdir(session_dir):
             return session_dir
     return None
+
 
 app.websocket("/ws")(ws_endpoint)
 
@@ -112,12 +114,39 @@ async def read_file(path: str = Query(...)):
     return {"content": content, "mime": mime or "text/plain", "path": path}
 
 
+def _get_lan_ip() -> str:
+    """Get the server's LAN IP address."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+
+@app.get("/api/network")
+async def get_network_info():
+    """Return the server's LAN IP and port for mobile access."""
+    host = _get_lan_ip()
+    port = 8765
+    return {
+        "host": host,
+        "port": port,
+        "url": f"http://{host}:{port}",
+    }
+
+
 @app.get("/api/sessions")
 async def list_sessions():
     """List kimi-code sessions for all known working directories."""
     sessions = []
     if not os.path.isdir(SESSIONS_DIR):
-        return {"sessions": sessions, "current_session_id": wire_state.current_session_id}
+        return {
+            "sessions": sessions,
+            "current_session_id": wire_state.current_session_id,
+        }
 
     try:
         for user_dir in sorted(os.listdir(SESSIONS_DIR)):
@@ -139,13 +168,15 @@ async def list_sessions():
                     continue
 
                 mtime = os.path.getmtime(state_file)
-                sessions.append({
-                    "id": session_name,
-                    "title": st.get("custom_title") or "未命名会话",
-                    "work_dir": str(st.get("work_dir", "")),
-                    "plan_mode": st.get("plan_mode", False),
-                    "updated_at": datetime.fromtimestamp(mtime).isoformat(),
-                })
+                sessions.append(
+                    {
+                        "id": session_name,
+                        "title": st.get("custom_title") or "未命名会话",
+                        "work_dir": str(st.get("work_dir", "")),
+                        "plan_mode": st.get("plan_mode", False),
+                        "updated_at": datetime.fromtimestamp(mtime).isoformat(),
+                    }
+                )
     except OSError:
         pass
 
@@ -231,7 +262,9 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to read file: {e}")
 
-    mime_type = file.content_type or (mimetypes.guess_type(file.filename)[0] or "application/octet-stream")
+    mime_type = file.content_type or (
+        mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
+    )
 
     # Auto-compress images
     if mime_type.startswith("image/"):
