@@ -1,0 +1,13 @@
+[project]
+name = "kimi-learn"
+version = "0.1.0"
+description = "Personal AI-assisted learning management system"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "httpx",
+    "Pillow",
+    "websockets",
+    "python-multipart"
+]

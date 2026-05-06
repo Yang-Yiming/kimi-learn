@@ -21,6 +21,7 @@ To make the system easier to use for my family, also to practice my software age
 <img src="web/resources/showcase.jpg" alt="Interface">
 
 # TODO:
-- [ ] add memory system. could refrence OpenClaw.
-- [ ] polish the webpage.
-- [ ] refine SKILLs.
+- [ ] Add password system for visiting through ip.
+- [ ] Add memory system. could refrence OpenClaw.
+- [ ] Refine SKILLs.
+- [x] Polish the webpage.
