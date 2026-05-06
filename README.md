@@ -18,6 +18,8 @@ Just simple skills that helps my brother & mother prepare for exams.
 
 To make the system easier to use for my family, also to practice my software agentic engineering skills, I built a MVP chat webpage based on [Kimi-CLI](https://github.com/MoonshotAI/kimi-cli)'s Wire feature.
 
+<img src="web/resources/showcase.jpg" alt="Interface">
+
 # TODO:
 - [ ] add memory system. could refrence OpenClaw.
 - [ ] polish the webpage.
